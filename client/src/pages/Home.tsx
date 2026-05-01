@@ -12,6 +12,8 @@ import { Car, TrainFront, Plane, MapPin, Compass, Phone, Mail } from "lucide-rea
 const SEAL_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663529091986/Scs4Vu8VvmjxVNgSRkX7yS/bheta-seal-Ckt69jQrVyv3TCjVLmcBoP.webp";
 
+const AUTO_CYCLE_DESTINATIONS = ["pantnagar", "kathgodam", "corbett"];
+
 const MODE_META: Record<Mode, { label: string; Icon: typeof Car; color: string }> = {
   road: { label: "By road", Icon: Car, color: "var(--color-deodar)" },
   rail: { label: "By rail", Icon: TrainFront, color: "var(--color-indigo-faded)" },
@@ -41,17 +43,25 @@ export default function Home() {
     [active]
   );
 
-  // Auto-cycle through pins to showcase interactivity
+  // Auto-cycle through specific destinations once to showcase interactivity
   useEffect(() => {
-    if (!autoPlay || visible.length === 0) return;
+    if (!autoPlay) return;
+
+    let currentCycleIndex = 0;
 
     const interval = setInterval(() => {
-      cycleIndexRef.current = (cycleIndexRef.current + 1) % visible.length;
-      setActive(visible[cycleIndexRef.current].id);
-    }, 4500); // Change every 4.5 seconds
+      if (currentCycleIndex < AUTO_CYCLE_DESTINATIONS.length) {
+        setActive(AUTO_CYCLE_DESTINATIONS[currentCycleIndex]);
+        currentCycleIndex++;
+      } else {
+        // Cycle complete, stop auto-play
+        setAutoPlay(false);
+        clearInterval(interval);
+      }
+    }, 2500); // Change every 2.5 seconds
 
     return () => clearInterval(interval);
-  }, [autoPlay, visible]);
+  }, [autoPlay]);
 
   // When user manually selects a destination, stop auto-play
   const handleDestinationSelect = (id: string) => {
@@ -166,6 +176,9 @@ export default function Home() {
                 {visible.length} entries
               </div>
             </div>
+            <p className="font-mono text-[10px] text-[color:var(--color-ink-soft)]/70 mb-3 italic">
+              Watch the map cycle through key hubs, or tap any destination to explore.
+            </p>
 
             <div className="paper-card rounded-md p-2 max-h-[640px] overflow-y-auto pr-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[color:var(--color-rule)] [&::-webkit-scrollbar-thumb]:rounded">
               {visible.map((d, i) => (
