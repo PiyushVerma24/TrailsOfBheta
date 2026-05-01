@@ -4,9 +4,10 @@
 // No purple gradients, no rounded-2xl Inter blandness.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import BhetaMap from "@/components/BhetaMap";
+import UnfoldingMap from "@/components/UnfoldingMap";
+import PropertyGallery from "@/components/PropertyGallery";
 import { BHETA, DESTINATIONS, type Destination, type Mode } from "@/lib/destinations";
-import { Car, TrainFront, Plane, MapPin, Compass, ChevronDown, Phone, Mail } from "lucide-react";
+import { Car, TrainFront, Plane, MapPin, Compass, Phone, Mail } from "lucide-react";
 
 const SEAL_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663529091986/Scs4Vu8VvmjxVNgSRkX7yS/bheta-seal-Ckt69jQrVyv3TCjVLmcBoP.webp";
@@ -115,10 +116,6 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-10 flex items-center gap-2 text-[color:var(--color-ink-soft)] animate-bounce">
-            <ChevronDown className="w-4 h-4" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.25em]">Unfold the map</span>
-          </div>
         </div>
       </section>
 
@@ -127,22 +124,10 @@ export default function Home() {
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Map */}
           <div className="lg:col-span-8">
-            <div className="paper-card rounded-md p-3 md:p-5">
-              <div className="flex items-center justify-between mb-3 px-1">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[color:var(--color-ink-soft)]">
-                    Plate I
-                  </div>
-                  <h2 className="font-display text-2xl md:text-3xl">Routes to Bheta</h2>
-                </div>
-                <FilterChips value={filter} onChange={setFilter} />
-              </div>
-              <BhetaMap active={active} onSelect={setActive} modeFilter={filter} />
-              <div className="px-1 pt-2 font-mono text-[10px] text-[color:var(--color-ink-soft)] flex flex-wrap gap-x-6 gap-y-1">
-                <span>Tip: tap any pin or card to draw the route.</span>
-                <span>Distances along motor roads — not straight-line.</span>
-              </div>
+            <div className="flex items-center justify-between mb-4 px-1">
+              <FilterChips value={filter} onChange={setFilter} />
             </div>
+            <UnfoldingMap active={active} onSelect={setActive} modeFilter={filter} />
           </div>
 
           {/* Logbook */}
@@ -178,6 +163,11 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ─────── Gallery ─────── */}
+      <section id="gallery" className="border-t border-[color:var(--color-rule)]/60">
+        <PropertyGallery />
       </section>
 
       {/* ─────── Active travel ticket ─────── */}
