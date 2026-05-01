@@ -13,38 +13,6 @@ interface UnfoldingMapProps {
 export default function UnfoldingMap({ active, onSelect, modeFilter }: UnfoldingMapProps) {
   const [isUnfolded, setIsUnfolded] = useState(false);
 
-  const mapVariants = {
-    folded: {
-      opacity: 0,
-      scaleY: 0,
-      y: -20,
-    },
-    unfolding: {
-      opacity: 1,
-      scaleY: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut",
-        type: "spring",
-        stiffness: 80,
-        damping: 12,
-      },
-    },
-  };
-
-  const waveVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: [0, 0.3, 0],
-      transition: {
-        duration: 1.2,
-        ease: "easeInOut",
-        delay: 0.2,
-      },
-    },
-  };
-
   return (
     <div className="space-y-4">
       {/* Unfold Button */}
@@ -68,17 +36,27 @@ export default function UnfoldingMap({ active, onSelect, modeFilter }: Unfolding
       <AnimatePresence>
         {isUnfolded && (
           <motion.div
-            variants={mapVariants}
-            initial="folded"
-            animate="unfolding"
-            exit="folded"
+            initial={{ opacity: 0, scaleY: 0, y: -20 }}
+            animate={{ opacity: 1, scaleY: 1, y: 0 }}
+            exit={{ opacity: 0, scaleY: 0, y: -20 }}
+            transition={{
+              duration: 0.8,
+              ease: "easeOut",
+              type: "spring",
+              stiffness: 80,
+              damping: 12,
+            }}
             className="origin-top"
           >
             {/* Wave effect during unfolding */}
             <motion.div
-              variants={waveVariants}
-              initial="hidden"
-              animate="visible"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{
+                duration: 1.2,
+                ease: "easeInOut",
+                delay: 0.2,
+              }}
               className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[color:var(--color-deodar)]/5 via-transparent to-transparent pointer-events-none blur-xl"
             />
 
