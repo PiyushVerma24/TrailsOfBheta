@@ -22,6 +22,13 @@ const DEFAULT_IMAGES: GalleryImage[] = [
     description: "Pencil sketch of Trails of Bheta nestled in the Kumaon hills, surrounded by ancient deodar forests",
     style: "sketch",
   },
+  {
+    id: "property-sketch-2",
+    src: "/bheta-property-sketch-2.jpg",
+    title: "Trails of Bheta — Hillside View",
+    description: "Sketch capturing the essence of Bheta's serene hillside landscape and architectural beauty",
+    style: "sketch",
+  },
 ];
 
 export default function PropertyGallery({ images = DEFAULT_IMAGES }: PropertyGalleryProps) {
