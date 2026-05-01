@@ -1,0 +1,28 @@
+{
+  "name": "trails-of-bheta",
+  "version": 2,
+  "framework": "vite",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist/public",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "envPrefix": "VITE_",
+  "routes": [
+    {
+      "src": "/(?!.*\\.)",
+      "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}
