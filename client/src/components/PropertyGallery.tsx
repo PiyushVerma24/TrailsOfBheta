@@ -18,15 +18,8 @@ const DEFAULT_IMAGES: GalleryImage[] = [
   {
     id: "property-image-1",
     src: "/bheta-property-sketch.jpg",
-    title: "Trails of Bheta — Nestled in the Kumaon",
+    title: "Trails of Bheta",
     description: "The main residence, perched quietly among ancient deodar forests at 1,890 metres. A place where the mountains echo silence.",
-    style: "photograph",
-  },
-  {
-    id: "property-image-2",
-    src: "/bheta-property-sketch-2.jpg",
-    title: "Trails of Bheta — Where the Hills Meet Home",
-    description: "The grounds embrace the landscape without disturbing it. Every window frames a different fold of the Himalayas.",
     style: "photograph",
   },
 ];
