@@ -40,11 +40,11 @@ export default function UnfoldingMap({ active, onSelect, modeFilter }: Unfolding
             animate={{ opacity: 1, scaleY: 1, y: 0 }}
             exit={{ opacity: 0, scaleY: 0, y: -20 }}
             transition={{
-              duration: 0.8,
+              duration: 1.4,
               ease: "easeOut",
               type: "spring",
-              stiffness: 80,
-              damping: 12,
+              stiffness: 60,
+              damping: 20,
             }}
             className="origin-top"
           >

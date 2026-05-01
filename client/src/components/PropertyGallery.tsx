@@ -17,9 +17,9 @@ interface PropertyGalleryProps {
 const DEFAULT_IMAGES: GalleryImage[] = [
   {
     id: "property-sketch-1",
-    src: "https://images.unsplash.com/photo-1542224566-6e85f2e6772f?w=600&h=400&fit=crop",
-    title: "Trails of Bheta — Main Lodge",
-    description: "Hand-drawn sketch style rendering of the main property building",
+    src: "/bheta-property-sketch.jpg",
+    title: "Trails of Bheta — The Property",
+    description: "Pencil sketch of Trails of Bheta nestled in the Kumaon hills, surrounded by ancient deodar forests",
     style: "sketch",
   },
 ];

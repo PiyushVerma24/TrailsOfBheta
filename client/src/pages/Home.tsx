@@ -85,6 +85,9 @@ export default function Home() {
               <h1 className="font-display text-[44px] md:text-[78px] leading-[0.95] tracking-tight">
                 Finding your way to <em className="not-italic text-[color:var(--color-deodar)]">Bheta</em>.
               </h1>
+              <p className="mt-3 text-[15px] italic text-[color:var(--color-ink-soft)] font-light">
+                Let's detach from a noisy world and attach with Nature...
+              </p>
               <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-[color:var(--color-ink-soft)]">
                 Tucked into a quiet fold of the Kumaon hills, eleven kilometres from Kausani,
                 Trails of Bheta is well connected to every major hill station and railhead in
