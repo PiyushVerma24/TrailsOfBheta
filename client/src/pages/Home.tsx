@@ -27,7 +27,9 @@ function formatGoogleMapsUrl(d: Destination) {
 export default function Home() {
   const [active, setActive] = useState<string | null>("kausani");
   const [filter, setFilter] = useState<Mode | "all">("all");
+  const [autoPlay, setAutoPlay] = useState(true);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const cycleIndexRef = useRef(0);
 
   const visible = useMemo(
     () => DESTINATIONS.filter((d) => filter === "all" || d.mode === filter),
@@ -38,6 +40,24 @@ export default function Home() {
     () => DESTINATIONS.find((d) => d.id === active) ?? DESTINATIONS[0],
     [active]
   );
+
+  // Auto-cycle through pins to showcase interactivity
+  useEffect(() => {
+    if (!autoPlay || visible.length === 0) return;
+
+    const interval = setInterval(() => {
+      cycleIndexRef.current = (cycleIndexRef.current + 1) % visible.length;
+      setActive(visible[cycleIndexRef.current].id);
+    }, 4500); // Change every 4.5 seconds
+
+    return () => clearInterval(interval);
+  }, [autoPlay, visible]);
+
+  // When user manually selects a destination, stop auto-play
+  const handleDestinationSelect = (id: string) => {
+    setActive(id);
+    setAutoPlay(false);
+  };
 
   // When user picks via map, scroll the corresponding card into view.
   useEffect(() => {
@@ -130,7 +150,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4 px-1">
               <FilterChips value={filter} onChange={setFilter} />
             </div>
-            <UnfoldingMap active={active} onSelect={setActive} modeFilter={filter} />
+            <UnfoldingMap active={active} onSelect={handleDestinationSelect} modeFilter={filter} />
           </div>
 
           {/* Logbook */}
@@ -154,7 +174,7 @@ export default function Home() {
                   destination={d}
                   index={i + 1}
                   active={active === d.id}
-                  onClick={() => setActive(d.id)}
+                  onClick={() => handleDestinationSelect(d.id)}
                   refSetter={(el) => (cardRefs.current[d.id] = el)}
                 />
               ))}
@@ -185,7 +205,7 @@ export default function Home() {
               const candidate = [...DESTINATIONS]
                 .filter((d) => d.km <= km)
                 .sort((a, b) => b.km - a.km)[0];
-              if (candidate) setActive(candidate.id);
+              if (candidate) handleDestinationSelect(candidate.id);
             }} />
           </div>
         </div>

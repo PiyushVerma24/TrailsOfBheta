@@ -37,7 +37,7 @@ export default function PropertyGallery({ images = DEFAULT_IMAGES }: PropertyGal
             Gallery
           </div>
           <h2 className="font-display text-4xl md:text-5xl leading-tight mb-4">
-            A Sketch of Bheta
+            A Sketch of Trails of Bheta
           </h2>
           <p className="text-[color:var(--color-ink-soft)] max-w-2xl">
             Hand-drawn sketches and photographs capturing the essence of Trails of Bheta — nestled in the quiet folds of the Kumaon hills.
