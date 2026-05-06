@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import UnfoldingMap from "@/components/UnfoldingMap";
 import PropertyGallery from "@/components/PropertyGallery";
+import BookingSection from "@/components/BookingSection";
 import { BHETA, DESTINATIONS, type Destination, type Mode } from "@/lib/destinations";
 import { Car, TrainFront, Plane, MapPin, Compass, Phone, Mail } from "lucide-react";
 
@@ -205,6 +206,9 @@ export default function Home() {
       <section id="gallery" className="border-t border-[color:var(--color-rule)]/60">
         <PropertyGallery />
       </section>
+
+      {/* ─────── Book your stay ─────── */}
+      <BookingSection />
 
       {/* ─────── Active travel ticket ─────── */}
       <section id="planner" className="container pb-20">
