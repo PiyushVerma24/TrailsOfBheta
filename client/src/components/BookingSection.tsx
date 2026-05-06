@@ -1,6 +1,8 @@
 // BookingSection — "Book Your Stay" with room picker → calendar → booking flow
+// CompassBadge — interactive compass: needle follows mouse, snaps to current month quarter on release
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import { useMotionValue, useSpring } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -212,30 +214,121 @@ export default function BookingSection() {
             </Dialog>
           </div>
 
-          {/* Right — decorative badge */}
+          {/* Right — compass badge */}
           <div className="md:col-span-6 flex justify-center md:justify-end">
-            <div className="relative w-64 h-64 select-none">
-              <div className="absolute inset-0 rounded-full border-2 border-dashed border-[color:var(--color-rule)] animate-[spin_60s_linear_infinite]" />
-              <div className="absolute inset-6 rounded-full border border-[color:var(--color-rule)] flex flex-col items-center justify-center text-center bg-[color:var(--color-paper-deep)]/40">
-                <CalendarDays size={22} className="text-[color:var(--color-deodar)] mb-2" />
-                <span className="font-display text-lg leading-tight">Book<br />Direct</span>
-                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[color:var(--color-terracotta)] mt-2">No OTA fees</span>
-              </div>
-              {["Jan–Mar", "Apr–Jun", "Jul–Sep", "Oct–Dec"].map((label, i) => {
-                const rad = ([0, 90, 180, 270][i] - 90) * (Math.PI / 180);
-                const x = 128 + 122 * Math.cos(rad);
-                const y = 128 + 122 * Math.sin(rad);
-                return (
-                  <span key={label} className="absolute font-mono text-[8px] uppercase tracking-[0.12em] text-[color:var(--color-ink-soft)] opacity-60" style={{ left: x, top: y, transform: "translate(-50%,-50%)" }}>
-                    {label}
-                  </span>
-                );
-              })}
-            </div>
+            <CompassBadge />
           </div>
 
         </div>
       </div>
     </section>
+  );
+}
+
+// ─── Compass Badge ────────────────────────────────────────────────────────────
+
+const QUARTERS = ["Jan–Mar", "Apr–Jun", "Jul–Sep", "Oct–Dec"];
+// CSS rotation (0° = needle tip points UP) for each quarter
+const QUARTER_ANGLES = [0, 90, 180, 270];
+
+function getCurrentQuarterAngle() {
+  const q = Math.floor(new Date().getMonth() / 3); // 0–3
+  return QUARTER_ANGLES[q];
+}
+
+function CompassBadge() {
+  const circleRef = useRef<HTMLDivElement>(null);
+  const defaultAngle = getCurrentQuarterAngle();
+
+  const raw = useMotionValue(defaultAngle);
+  // Spring: snappy follow while dragging, smooth settle on release
+  const angle = useSpring(raw, { stiffness: 260, damping: 22, mass: 0.6 });
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const el = circleRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    // atan2 → math angle (0°=east). CSS rotate 0°=up, so +90 to align.
+    const deg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+    raw.set(deg);
+  }, [raw]);
+
+  const handleMouseLeave = useCallback(() => {
+    raw.set(defaultAngle);
+  }, [raw, defaultAngle]);
+
+  return (
+    <div
+      ref={circleRef}
+      className="relative w-64 h-64 select-none cursor-crosshair"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Outer dashed ring — slow spin */}
+      <div className="absolute inset-0 rounded-full border-2 border-dashed border-[color:var(--color-rule)] animate-[spin_60s_linear_infinite]" />
+
+      {/* Inner face */}
+      <div className="absolute inset-6 rounded-full border border-[color:var(--color-rule)] flex flex-col items-center justify-center text-center bg-[color:var(--color-paper-deep)]/40">
+        <CalendarDays size={20} className="text-[color:var(--color-deodar)] mb-1.5" />
+        <span className="font-display text-lg leading-tight">Book<br />Direct</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-[color:var(--color-terracotta)] mt-1.5">No OTA fees</span>
+      </div>
+
+      {/* Quarter labels */}
+      {QUARTERS.map((label, i) => {
+        const rad = (QUARTER_ANGLES[i] - 90) * (Math.PI / 180);
+        const x = 128 + 112 * Math.cos(rad);
+        const y = 128 + 112 * Math.sin(rad);
+        const isCurrent = QUARTER_ANGLES[i] === defaultAngle;
+        return (
+          <span
+            key={label}
+            className="absolute font-mono text-[8px] uppercase tracking-[0.12em] transition-colors"
+            style={{
+              left: x, top: y,
+              transform: "translate(-50%,-50%)",
+              color: isCurrent ? "var(--color-terracotta)" : "var(--color-ink-soft)",
+              opacity: isCurrent ? 0.9 : 0.5,
+            }}
+          >
+            {label}
+          </span>
+        );
+      })}
+
+      {/* Magnetic compass needle */}
+      <motion.div
+        style={{ rotate: angle }}
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      >
+        {/* Needle: two halves, tip (top) = deodar, tail (bottom) = terracotta */}
+        <div className="relative flex flex-col items-center" style={{ height: 72, width: 6 }}>
+          {/* Tip — points to the active direction */}
+          <div
+            className="w-[3px] flex-1 rounded-t-full"
+            style={{ background: "var(--color-deodar)" }}
+          />
+          {/* Centre pivot dot */}
+          <div
+            className="w-3 h-3 rounded-full border-2 z-10 shrink-0"
+            style={{
+              background: "var(--color-paper)",
+              borderColor: "var(--color-rule)",
+              marginTop: -2,
+              marginBottom: -2,
+            }}
+          />
+          {/* Tail — opposite end */}
+          <div
+            className="w-[3px] flex-1 rounded-b-full"
+            style={{ background: "var(--color-terracotta)" }}
+          />
+        </div>
+      </motion.div>
+    </div>
   );
 }
