@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Qord × Trails of Bheta — Architecture</title>
+<style>
+  :root {
+    --paper:   #f4ebd9;
+    --ink:     #1b1a17;
+    --ink-soft:#3b3833;
+    --deodar:  #2f4a3a;
+    --deodar2: #4a6a55;
+    --terra:   #b0512e;
+    --terra2:  #d97a4f;
+    --indigo:  #3a4d6b;
+    --rule:    #c9b78f;
+    --purple:  #5b3d7a;
+    --blue:    #2563ab;
+    --gold:    #a07820;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    color: var(--ink);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--rule);
+    background: #efe3c8;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-family: Georgia, serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: .03em;
+  }
+  header p { font-size: 10px; opacity: .6; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  /* Layer filter pills */
+  .pills { display: flex; gap: 6px; }
+  .pill {
+    font-size: 9px; padding: 3px 9px; border-radius: 20px; border: 1px solid;
+    cursor: pointer; text-transform: uppercase; letter-spacing: .1em;
+    transition: all .15s;
+  }
+  .pill.active { color: #fff; }
+  .pill[data-layer="all"]      { border-color: var(--ink-soft); }
+  .pill[data-layer="all"].active { background: var(--ink-soft); }
+  .pill[data-layer="frontend"] { border-color: var(--deodar); }
+  .pill[data-layer="frontend"].active { background: var(--deodar); }
+  .pill[data-layer="backend"]  { border-color: var(--indigo); }
+  .pill[data-layer="backend"].active  { background: var(--indigo); }
+  .pill[data-layer="data"]     { border-color: var(--purple); }
+  .pill[data-layer="data"].active     { background: var(--purple); }
+  .pill[data-layer="external"] { border-color: var(--terra); }
+  .pill[data-layer="external"].active { background: var(--terra); }
+
+  .btn-replay {
+    font-size: 9px; padding: 3px 12px; border-radius: 20px;
+    border: 1px solid var(--gold); color: var(--gold);
+    cursor: pointer; text-transform: uppercase; letter-spacing: .1em;
+    background: transparent; transition: all .15s;
+  }
+  .btn-replay:hover { background: var(--gold); color: #fff; }
+
+  /* ── Main layout ── */
+  .workspace { display: flex; flex: 1; overflow: hidden; }
+
+  /* SVG canvas */
+  #canvas {
+    flex: 1;
+    cursor: grab;
+    overflow: hidden;
+  }
+  #canvas:active { cursor: grabbing; }
+
+  /* ── Side panel ── */
+  .panel {
+    width: 280px;
+    background: #efe3c8;
+    border-left: 1px solid var(--rule);
+    padding: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition: transform .25s ease;
+  }
+  .panel.hidden { transform: translateX(100%); width: 0; padding: 0; border: none; overflow: hidden; }
+  .panel-title {
+    font-family: Georgia, serif; font-size: 17px; margin-bottom: 4px;
+  }
+  .panel-tag {
+    font-size: 9px; text-transform: uppercase; letter-spacing: .15em;
+    opacity: .55; margin-bottom: 14px;
+  }
+  .panel-section { margin-bottom: 14px; }
+  .panel-section h4 {
+    font-size: 9px; text-transform: uppercase; letter-spacing: .15em;
+    opacity: .5; margin-bottom: 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px;
+  }
+  .panel-section p, .panel-section li {
+    font-size: 11px; line-height: 1.6; opacity: .85;
+  }
+  .panel-section ul { padding-left: 14px; }
+  .tag-chip {
+    display: inline-block; font-size: 9px; padding: 2px 7px;
+    border-radius: 3px; margin: 2px; border: 1px solid var(--rule);
+    background: rgba(255,255,255,.4);
+  }
+  .close-panel {
+    float: right; cursor: pointer; font-size: 14px; opacity: .4; line-height: 1;
+  }
+  .close-panel:hover { opacity: 1; }
+
+  /* ── Legend ── */
+  .legend {
+    position: absolute; bottom: 14px; left: 14px;
+    background: rgba(244,235,217,.92); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 8px 12px; font-size: 9px;
+    text-transform: uppercase; letter-spacing: .1em;
+    backdrop-filter: blur(4px);
+  }
+  .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Replay step banner */
+  #step-banner {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper);
+    font-size: 11px; padding: 6px 16px; border-radius: 20px;
+    display: none; white-space: nowrap;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Qord × Trails of Bheta — System Architecture</h1>
+    <p>Click any node to inspect · hover connections for data details · drag to pan</p>
+  </div>
+  <div class="header-right">
+    <div class="pills">
+      <div class="pill active" data-layer="all">All</div>
+      <div class="pill" data-layer="frontend">Frontend</div>
+      <div class="pill" data-layer="backend">Backend</div>
+      <div class="pill" data-layer="data">Data</div>
+      <div class="pill" data-layer="external">External</div>
+    </div>
+    <button class="btn-replay" id="replayBtn">▶ Replay booking flow</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <svg id="canvas"></svg>
+
+  <div class="panel hidden" id="panel">
+    <span class="close-panel" id="closePanel">✕</span>
+    <div class="panel-title" id="panelTitle"></div>
+    <div class="panel-tag" id="panelTag"></div>
+    <div id="panelBody"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-row"><div class="legend-dot" style="background:#2f4a3a"></div>Frontend</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#3a4d6b"></div>Backend (Qord)</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#5b3d7a"></div>Database</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#b0512e"></div>External</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#888"></div>Actor</div>
+</div>
+
+<div id="step-banner"></div>
+
+<script>
+// ─── Data ──────────────────────────────────────────────────────────────────
+
+const NODES = [
+  {
+    id: 'guest', label: 'Guest Browser', sublabel: 'End customer',
+    x: 100, y: 340, layer: 'external', color: '#6b7280',
+    icon: '👤',
+    detail: {
+      tag: 'Actor · End Customer',
+      about: 'A traveller visiting Trails of Bheta website to browse availability, select a room, and complete a direct booking without OTA commissions.',
+      tech: [],
+      endpoints: [],
+      extra: [['Journey', ['Visits website → picks room → selects dates → pays advance → receives access code']]]
+    }
+  },
+  {
+    id: 'trails', label: 'TrailsOfBheta.in', sublabel: 'Vite · React · Vercel',
+    x: 320, y: 340, layer: 'frontend', color: '#2f4a3a',
+    icon: '🏔',
+    detail: {
+      tag: 'Frontend · Vite + React · vercel.app',
+      about: 'Public property website for Trails of Bheta, Kausani. Showcases the property, travel map, gallery, and hosts the live booking widget powered by Qord.',
+      tech: ['React 19', 'Vite 7', 'Tailwind 4', 'framer-motion', 'react-day-picker', 'Radix UI'],
+      endpoints: [],
+      extra: [
+        ['Key Components', ['BookingSection — room picker entry', 'AvailabilityCalendar — blocked dates from Qord', 'BookingFlow — 3-step booking wizard', 'CompassBadge — magnetic needle UI']],
+        ['Config', ['lib/rooms.ts — 4 room tokens hardcoded', 'lib/qord.ts — typed API client']],
+      ]
+    }
+  },
+  {
+    id: 'qord_api', label: 'Qord Public API', sublabel: 'Next.js · curling-booking.vercel.app',
+    x: 580, y: 230, layer: 'backend', color: '#3a4d6b',
+    icon: '⚡',
+    detail: {
+      tag: 'Backend · Next.js API Routes · Vercel',
+      about: 'Stateless public endpoints that power the booking widget. No auth required — protected by property-specific booking_page_token. CORS open for cross-origin property websites.',
+      tech: ['Next.js 14 App Router', 'Supabase Admin SDK', 'Razorpay REST API'],
+      endpoints: [
+        'GET /api/public/property/[token] — availability + property info',
+        'POST /api/public/bookings/create — create booking + Razorpay link',
+        'OPTIONS /api/public/* — CORS preflight',
+      ],
+      extra: [
+        ['Security', ['Token-based auth (booking_page_token)', 'CORS: Access-Control-Allow-Origin: *', 'Overlap check before booking insert']],
+      ]
+    }
+  },
+  {
+    id: 'qord_ical', label: 'iCal Engine', sublabel: 'Import · Export · Cron',
+    x: 580, y: 420, layer: 'backend', color: '#3a4d6b',
+    icon: '📅',
+    detail: {
+      tag: 'Backend · iCal Sync Engine · RFC 5545',
+      about: 'Two-directional iCal synchronisation. Exports Qord bookings as .ics feeds for OTAs to pull. Imports OTA .ics feeds into Supabase bookings table every 15 minutes.',
+      tech: ['Vercel Cron (every 15min)', 'ical.ts — zero-dependency RFC 5545 parser', 'IST timezone handling'],
+      endpoints: [
+        'GET /api/ical/[propertyId]?token= — export feed (OTAs pull this)',
+        'POST /api/ical/sync — import from all configured OTA feeds',
+        'GET /api/ical/ota-syncs — sync history',
+      ],
+      extra: [
+        ['Guards', ['Circular sync guard — imported events never re-exported', 'Past bookings never deleted on import', 'Activity log written per pull']],
+      ]
+    }
+  },
+  {
+    id: 'qord_dash', label: 'Qord Dashboard', sublabel: 'curling-booking.vercel.app',
+    x: 850, y: 130, layer: 'backend', color: '#3a4d6b',
+    icon: '🎛',
+    detail: {
+      tag: 'Backend + Frontend · Next.js · PWA',
+      about: 'Mobile-first property management app for the Trails of Bheta team. Manages bookings, payments, guests, team members, expenses, tasks and iCal sync configuration.',
+      tech: ['Next.js 14', 'Supabase Auth', 'Supabase Realtime', 'Razorpay', 'Framer Motion'],
+      endpoints: [],
+      extra: [
+        ['Modules', ['Calendar (per-property + unified)', 'Booking management + triage', 'Payment links + tracking', 'Team RBAC (owner / manager / staff)', 'Guest portal', 'Expenses & tasks', 'iCal import/export config']],
+      ]
+    }
+  },
+  {
+    id: 'owner', label: 'Property Owner', sublabel: 'Trails of Bheta team',
+    x: 1090, y: 130, layer: 'external', color: '#6b7280',
+    icon: '🏠',
+    detail: {
+      tag: 'Actor · Property Management Team',
+      about: 'The Trails of Bheta ownership team who log into Qord Dashboard to manage all bookings, set pricing, configure iCal feeds, handle payments and coordinate with staff.',
+      tech: [], endpoints: [], extra: []
+    }
+  },
+  {
+    id: 'supabase', label: 'Supabase', sublabel: 'PostgreSQL · Auth · Realtime',
+    x: 690, y: 560, layer: 'data', color: '#5b3d7a',
+    icon: '🗄',
+    detail: {
+      tag: 'Database · Supabase (PostgreSQL + Auth + Realtime)',
+      about: 'Single source of truth for all bookings, properties, payments, teams, guests and iCal sync state. RLS policies enforce multi-tenant data isolation.',
+      tech: ['PostgreSQL 15', 'Supabase Auth (magic link + phone OTP)', 'Supabase Realtime', 'Row Level Security'],
+      endpoints: [],
+      extra: [
+        ['Key Tables', ['properties — price, token, iCal config', 'bookings — check_in/out, status, ical_uid', 'booking_payments — Razorpay links, status', 'ical_calendars — OTA feed URLs', 'ical_activity_log — every pull logged', 'organizations + org_memberships — multi-tenant', 'services, tasks, expenses']],
+      ]
+    }
+  },
+  {
+    id: 'razorpay', label: 'Razorpay', sublabel: 'Payment Links · Webhooks',
+    x: 400, y: 560, layer: 'external', color: '#b0512e',
+    icon: '💳',
+    detail: {
+      tag: 'External · Razorpay Payment Gateway',
+      about: 'Generates payment links for booking advances. Guest pays via Razorpay (UPI, cards, netbanking). Webhook fires to Qord on payment, updating booking_payments status.',
+      tech: ['Razorpay Payment Links API', 'Razorpay Webhooks', 'Razorpay Payouts (agent commissions)'],
+      endpoints: [
+        'POST /payment_links — create advance link',
+        'Webhook → /api/payments/webhook — payment confirmed',
+        'POST /payment_links/:id/cancel — cancel stale links',
+      ],
+      extra: [
+        ['Flow', ['Qord API creates link → returns short_url to guest', '30-min expiry on links', 'Guest pays → webhook → booking_payments.status = paid', 'Balance collected at check-in (cash/UPI/bank)']],
+      ]
+    }
+  },
+  {
+    id: 'otas', label: 'OTAs', sublabel: 'Airbnb · Booking.com · VRBO',
+    x: 950, y: 430, layer: 'external', color: '#b0512e',
+    icon: '🌐',
+    detail: {
+      tag: 'External · Online Travel Agents',
+      about: 'OTAs pull Qord\'s iCal export feed every few hours to keep their calendars in sync. Qord imports OTA feeds every 15 minutes to bring those bookings into Supabase.',
+      tech: ['iCal RFC 5545', 'Airbnb calendar sync', 'Booking.com calendar sync'],
+      endpoints: [],
+      extra: [
+        ['Sync direction', ['OTA → Qord (import): fetch OTA .ics, upsert bookings', 'Qord → OTA (export): OTAs pull /api/ical/[propertyId]?token=', 'Frequency: import every 15min (Vercel Cron), export on-demand']],
+      ]
+    }
+  },
+  {
+    id: 'cron', label: 'Vercel Cron', sublabel: 'Every 15 minutes',
+    x: 850, y: 560, layer: 'backend', color: '#3a4d6b',
+    icon: '⏱',
+    detail: {
+      tag: 'Infrastructure · Vercel Cron Job',
+      about: 'Vercel-managed cron that triggers the iCal import sync every 15 minutes. Fetches all configured OTA calendar feeds, detects new/changed/removed bookings, and upserts into Supabase.',
+      tech: ['Vercel Cron (vercel.json)', 'Next.js API route handler'],
+      endpoints: ['POST /api/ical/sync?trigger=CRON'],
+      extra: [
+        ['Output', ['Added / Updated / Removed booking counts', 'Duration logged', 'Errors written to ical_import_log table']],
+      ]
+    }
+  },
+  {
+    id: 'guest_portal', label: 'Guest Portal', sublabel: '/g/[code] · /guest/*',
+    x: 1090, y: 340, layer: 'backend', color: '#2f4a3a',
+    icon: '🔑',
+    detail: {
+      tag: 'Frontend · Next.js · Guest-facing',
+      about: 'Mobile-optimised portal guests access via their 6-digit access code. Shows booking details, check-in instructions, services, and allows document upload.',
+      tech: ['Next.js App Router', 'Supabase (service-role read)', 'Firebase Phone OTP'],
+      endpoints: [
+        'GET /g/[code] — shortcode redirect',
+        'GET /guest/* — portal pages',
+        '/api/guest/* — booking details, services, payments',
+      ],
+      extra: []
+    }
+  },
+];
+
+const EDGES = [
+  { from: 'guest',      to: 'trails',      label: 'visits website',                     style: 'solid',  color: '#6b7280', layer: 'frontend' },
+  { from: 'trails',     to: 'qord_api',    label: 'GET /property/[token]',              style: 'solid',  color: '#2f4a3a', layer: 'frontend', step: 1 },
+  { from: 'qord_api',   to: 'trails',      label: 'blocked_ranges + price',             style: 'dashed', color: '#2f4a3a', layer: 'frontend', step: 2 },
+  { from: 'trails',     to: 'qord_api',    label: 'POST /bookings/create',              style: 'solid',  color: '#2f4a3a', layer: 'frontend', step: 3 },
+  { from: 'qord_api',   to: 'supabase',    label: 'read availability + write booking',  style: 'solid',  color: '#5b3d7a', layer: 'data',     step: 4 },
+  { from: 'qord_api',   to: 'razorpay',    label: 'create payment link',                style: 'solid',  color: '#b0512e', layer: 'external', step: 5 },
+  { from: 'razorpay',   to: 'trails',      label: 'short_url returned',                 style: 'dashed', color: '#b0512e', layer: 'external', step: 6 },
+  { from: 'guest',      to: 'razorpay',    label: 'pays advance (UPI / card)',          style: 'solid',  color: '#b0512e', layer: 'external', step: 7 },
+  { from: 'razorpay',   to: 'qord_api',    label: 'webhook: payment confirmed',         style: 'dashed', color: '#b0512e', layer: 'external', step: 8 },
+  { from: 'qord_api',   to: 'supabase',    label: 'update payment status',              style: 'solid',  color: '#5b3d7a', layer: 'data' },
+  { from: 'owner',      to: 'qord_dash',   label: 'manages bookings & settings',        style: 'solid',  color: '#6b7280', layer: 'backend' },
+  { from: 'qord_dash',  to: 'supabase',    label: 'full CRUD + realtime',               style: 'solid',  color: '#5b3d7a', layer: 'data' },
+  { from: 'supabase',   to: 'qord_dash',   label: 'realtime updates',                   style: 'dashed', color: '#5b3d7a', layer: 'data' },
+  { from: 'qord_ical',  to: 'otas',        label: 'export .ics feed (OTAs pull)',       style: 'solid',  color: '#b0512e', layer: 'external' },
+  { from: 'otas',       to: 'qord_ical',   label: 'import .ics (cron fetches)',         style: 'dashed', color: '#b0512e', layer: 'external' },
+  { from: 'cron',       to: 'qord_ical',   label: 'trigger sync every 15 min',          style: 'solid',  color: '#3a4d6b', layer: 'backend' },
+  { from: 'qord_ical',  to: 'supabase',    label: 'upsert imported bookings',           style: 'solid',  color: '#5b3d7a', layer: 'data' },
+  { from: 'qord_dash',  to: 'qord_ical',   label: 'configure iCal feeds',              style: 'solid',  color: '#3a4d6b', layer: 'backend' },
+  { from: 'qord_dash',  to: 'guest_portal',label: 'guest access token',                 style: 'dashed', color: '#2f4a3a', layer: 'backend' },
+  { from: 'guest',      to: 'guest_portal',label: 'access code login',                  style: 'dashed', color: '#6b7280', layer: 'backend' },
+];
+
+// ─── SVG rendering ──────────────────────────────────────────────────────────
+
+const svg = document.getElementById('canvas');
+let W = svg.clientWidth, H = svg.clientHeight;
+let panX = 0, panY = 0, scale = 1;
+let activeLayer = 'all';
+let dragging = false, dragStart = null, panStart = null;
+let animFrames = [];
+
+function resize() {
+  W = svg.clientWidth;
+  H = svg.clientHeight;
+}
+window.addEventListener('resize', () => { resize(); renderAll(); });
+resize();
+
+// Center the diagram
+function centerOffset() {
+  const xs = NODES.map(n => n.x), ys = NODES.map(n => n.y);
+  const minX = Math.min(...xs) - 80, maxX = Math.max(...xs) + 160;
+  const minY = Math.min(...ys) - 60, maxY = Math.max(...ys) + 80;
+  const dW = maxX - minX, dH = maxY - minY;
+  const s = Math.min((W * .9) / dW, (H * .9) / dH, 1);
+  return {
+    tx: (W - dW * s) / 2 - minX * s,
+    ty: (H - dH * s) / 2 - minY * s,
+    s,
+  };
+}
+
+function ns(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  return el;
+}
+
+function nodeOpacity(node) {
+  return activeLayer === 'all' || node.layer === activeLayer ? 1 : 0.15;
+}
+function edgeOpacity(edge) {
+  return activeLayer === 'all' || edge.layer === activeLayer ? 1 : 0.08;
+}
+
+function renderAll() {
+  svg.innerHTML = '';
+  const { tx, ty, s } = centerOffset();
+  const t = `translate(${tx + panX},${ty + panY}) scale(${scale * s})`;
+
+  // Defs: arrowheads + dot filter
+  const defs = ns('defs');
+
+  const colors = [...new Set(EDGES.map(e => e.color)), '#888'];
+  colors.forEach(c => {
+    const cid = c.replace('#', 'arr');
+    const marker = ns('marker', { id: cid, markerWidth:'8', markerHeight:'8', refX:'6', refY:'3', orient:'auto' });
+    const path = ns('path', { d:'M0,0 L0,6 L8,3 z', fill: c });
+    marker.appendChild(path);
+    defs.appendChild(marker);
+  });
+
+  // glow filter
+  const filter = ns('filter', { id: 'glow' });
+  const feBlur = ns('feGaussianBlur', { stdDeviation: '3', result: 'blur' });
+  const feMerge = ns('feMerge');
+  const fm1 = ns('feMergeNode', { in: 'blur' });
+  const fm2 = ns('feMergeNode', { in: 'SourceGraphic' });
+  feMerge.append(fm1, fm2);
+  filter.append(feBlur, feMerge);
+  defs.appendChild(filter);
+  svg.appendChild(defs);
+
+  const g = ns('g', { transform: t });
+  svg.appendChild(g);
+
+  // Draw edges
+  EDGES.forEach((e, i) => {
+    const from = NODES.find(n => n.id === e.from);
+    const to   = NODES.find(n => n.id === e.to);
+    if (!from || !to) return;
+
+    const opacity = edgeOpacity(e);
+
+    // slightly curved path
+    const mx = (from.x + 80 + to.x + 80) / 2;
+    const my = (from.y + 28 + to.y + 28) / 2 + (i % 3 - 1) * 20;
+
+    const pathD = `M${from.x+80},${from.y+28} Q${mx},${my} ${to.x+80},${to.y+28}`;
+    const cid = e.color.replace('#', 'arr');
+
+    const path = ns('path', {
+      d: pathD,
+      stroke: e.color,
+      'stroke-width': '1.5',
+      fill: 'none',
+      'stroke-dasharray': e.style === 'dashed' ? '6 4' : 'none',
+      'marker-end': `url(#${cid})`,
+      opacity,
+      class: `edge edge-${e.from}-${e.to}`,
+      'data-label': e.label,
+      'data-from': e.from,
+      'data-to': e.to,
+      style: 'cursor:pointer',
+    });
+
+    // invisible fat hit area
+    const hit = ns('path', {
+      d: pathD, stroke: 'transparent', 'stroke-width': '12', fill: 'none', style: 'cursor:pointer',
+    });
+
+    const tooltip = ns('g', { class: 'edge-tooltip', opacity: 0, 'pointer-events': 'none' });
+    const pathLen = 60;
+    const rx = (from.x + 80 + to.x + 80) / 2 - 60;
+    const ry = my - 14;
+    const tb = ns('rect', { x: rx, y: ry, width: 120, height: 18, rx: 3, fill: '#1b1a17', opacity: '.85' });
+    const tt = ns('text', { x: rx + 60, y: ry + 12, 'text-anchor': 'middle', fill: '#f4ebd9', 'font-size': '8', 'font-family': 'monospace' });
+    tt.textContent = e.label;
+    tooltip.append(tb, tt);
+
+    [path, hit].forEach(el => {
+      el.addEventListener('mouseenter', () => { tooltip.setAttribute('opacity', 1); path.setAttribute('stroke-width', '2.5'); });
+      el.addEventListener('mouseleave', () => { tooltip.setAttribute('opacity', 0); path.setAttribute('stroke-width', '1.5'); });
+    });
+
+    g.append(path, hit, tooltip);
+  });
+
+  // Draw nodes
+  NODES.forEach(node => {
+    const opacity = nodeOpacity(node);
+    const ng = ns('g', { class: `node node-${node.id}`, style: 'cursor:pointer', opacity });
+
+    // Shadow
+    const shadow = ns('rect', { x: node.x+3, y: node.y+5, width: 160, height: 56, rx: 6, fill: 'rgba(0,0,0,.08)' });
+    // Box
+    const box = ns('rect', {
+      x: node.x, y: node.y, width: 160, height: 56, rx: 6,
+      fill: '#f4ebd9', stroke: node.color, 'stroke-width': '2',
+    });
+    // Colour bar
+    const bar = ns('rect', { x: node.x, y: node.y, width: 6, height: 56, rx: '6 0 0 6', fill: node.color });
+    const bar2 = ns('rect', { x: node.x, y: node.y, width: 6, height: 56, fill: node.color });
+
+    // Icon
+    const icon = ns('text', { x: node.x + 18, y: node.y + 24, 'font-size': '14', 'dominant-baseline': 'middle' });
+    icon.textContent = node.icon;
+
+    // Label
+    const label = ns('text', {
+      x: node.x + 34, y: node.y + 19, 'font-size': '10', 'font-weight': '700',
+      fill: '#1b1a17', 'font-family': 'Georgia, serif',
+    });
+    label.textContent = node.label;
+
+    // Sublabel
+    const sub = ns('text', {
+      x: node.x + 34, y: node.y + 33, 'font-size': '8', fill: '#6b7280', 'font-family': 'monospace',
+    });
+    sub.textContent = node.sublabel;
+
+    ng.append(shadow, box, bar, bar2, icon, label, sub);
+
+    ng.addEventListener('mouseenter', () => box.setAttribute('filter', 'url(#glow)'));
+    ng.addEventListener('mouseleave', () => box.removeAttribute('filter'));
+    ng.addEventListener('click', () => showPanel(node));
+
+    g.appendChild(ng);
+  });
+
+  // Animate flow dots
+  animFrames.forEach(cancelAnimationFrame);
+  animFrames = [];
+  animateFlowDots(g);
+}
+
+// ─── Flow dot animation ──────────────────────────────────────────────────────
+
+function animateFlowDots(g) {
+  EDGES.forEach((e, i) => {
+    const from = NODES.find(n => n.id === e.from);
+    const to   = NODES.find(n => n.id === e.to);
+    if (!from || !to) return;
+
+    const dot = ns('circle', { r: '3', fill: e.color, opacity: edgeOpacity(e) * 0.7 });
+    g.appendChild(dot);
+
+    const mx = (from.x + 80 + to.x + 80) / 2;
+    const my = (from.y + 28 + to.y + 28) / 2 + (i % 3 - 1) * 20;
+
+    let t = Math.random();
+    const speed = 0.0008 + Math.random() * 0.0006;
+
+    function step(ts) {
+      t += speed;
+      if (t > 1) t = 0;
+      // Quadratic bezier position
+      const x = (1-t)*(1-t)*(from.x+80) + 2*(1-t)*t*mx + t*t*(to.x+80);
+      const y = (1-t)*(1-t)*(from.y+28) + 2*(1-t)*t*my + t*t*(to.y+28);
+      dot.setAttribute('cx', x);
+      dot.setAttribute('cy', y);
+      dot.setAttribute('opacity', edgeOpacity(e) * 0.75);
+      animFrames.push(requestAnimationFrame(step));
+    }
+    animFrames.push(requestAnimationFrame(step));
+  });
+}
+
+// ─── Panel ──────────────────────────────────────────────────────────────────
+
+function showPanel(node) {
+  const panel = document.getElementById('panel');
+  const d = node.detail;
+  document.getElementById('panelTitle').textContent = node.label;
+  document.getElementById('panelTag').textContent = d.tag;
+
+  let html = '';
+
+  if (d.about) {
+    html += `<div class="panel-section"><h4>About</h4><p>${d.about}</p></div>`;
+  }
+  if (d.tech?.length) {
+    html += `<div class="panel-section"><h4>Stack</h4>`;
+    d.tech.forEach(t => html += `<span class="tag-chip">${t}</span>`);
+    html += `</div>`;
+  }
+  if (d.endpoints?.length) {
+    html += `<div class="panel-section"><h4>API Endpoints</h4><ul>`;
+    d.endpoints.forEach(ep => html += `<li>${ep}</li>`);
+    html += `</ul></div>`;
+  }
+  d.extra?.forEach(([title, items]) => {
+    html += `<div class="panel-section"><h4>${title}</h4><ul>`;
+    items.forEach(item => html += `<li>${item}</li>`);
+    html += `</ul></div>`;
+  });
+
+  document.getElementById('panelBody').innerHTML = html;
+  panel.classList.remove('hidden');
+}
+
+document.getElementById('closePanel').addEventListener('click', () => {
+  document.getElementById('panel').classList.add('hidden');
+});
+
+// ─── Layer filter pills ──────────────────────────────────────────────────────
+
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    activeLayer = p.dataset.layer;
+    renderAll();
+  });
+});
+
+// ─── Pan + zoom ──────────────────────────────────────────────────────────────
+
+svg.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  dragging = true;
+  dragStart = { x: e.clientX, y: e.clientY };
+  panStart = { x: panX, y: panY };
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  panX = panStart.x + e.clientX - dragStart.x;
+  panY = panStart.y + e.clientY - dragStart.y;
+  renderAll();
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  scale = Math.max(0.4, Math.min(2.5, scale * delta));
+  renderAll();
+}, { passive: false });
+
+// ─── Booking flow replay ─────────────────────────────────────────────────────
+
+const STEPS = [
+  { edge: { from:'guest',    to:'trails'    }, msg: '1 · Guest opens TrailsOfBheta.in' },
+  { edge: { from:'trails',   to:'qord_api'  }, msg: '2 · Website fetches availability from Qord' },
+  { edge: { from:'qord_api', to:'trails'    }, msg: '3 · Qord returns blocked dates + pricing' },
+  { edge: { from:'trails',   to:'qord_api'  }, msg: '4 · Guest submits booking request' },
+  { edge: { from:'qord_api', to:'supabase'  }, msg: '5 · Qord checks availability → writes booking to Supabase' },
+  { edge: { from:'qord_api', to:'razorpay'  }, msg: '6 · Qord creates Razorpay payment link (50% advance)' },
+  { edge: { from:'razorpay', to:'trails'    }, msg: '7 · Payment link returned to guest' },
+  { edge: { from:'guest',    to:'razorpay'  }, msg: '8 · Guest pays via UPI / card' },
+  { edge: { from:'razorpay', to:'qord_api'  }, msg: '9 · Razorpay webhook: payment confirmed' },
+  { edge: { from:'qord_api', to:'supabase'  }, msg: '10 · Booking marked paid in Supabase' },
+];
+
+let replayActive = false;
+document.getElementById('replayBtn').addEventListener('click', async () => {
+  if (replayActive) return;
+  replayActive = true;
+  const banner = document.getElementById('step-banner');
+  banner.style.display = 'block';
+
+  for (const step of STEPS) {
+    banner.textContent = step.msg;
+    activeLayer = 'all';
+    renderAll();
+
+    // Highlight the relevant edge
+    const edges = svg.querySelectorAll('.edge');
+    edges.forEach(el => {
+      if (el.getAttribute('data-from') === step.edge.from && el.getAttribute('data-to') === step.edge.to) {
+        el.setAttribute('stroke-width', '4');
+        el.setAttribute('filter', 'url(#glow)');
+      } else {
+        el.setAttribute('opacity', '0.08');
+      }
+    });
+    await new Promise(r => setTimeout(r, 1800));
+  }
+
+  banner.style.display = 'none';
+  replayActive = false;
+  renderAll();
+});
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>
