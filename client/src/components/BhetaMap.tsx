@@ -2,7 +2,7 @@
 // Style reminder: vintage Survey-of-India journal. Hand-drawn feel, dotted
 // routes, pulsing reach rings, deodar green ink. Do not modernize the look.
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { BHETA, DESTINATIONS, type Destination, type Mode } from "@/lib/destinations";
 
 interface Props {
@@ -22,6 +22,194 @@ const MODE_COLOR: Record<Mode, string> = {
   rail: "#3A4D6B",
   air: "#B0512E",
 };
+
+// ─── Animated vehicle components ─────────────────────────────────────────────
+
+// 3 staggered smoke puffs that drift upward and backward then vanish
+function SmokePuffs({ sx, sy }: { sx: number; sy: number }) {
+  return (
+    <g>
+      {([0, 0.8, 1.6] as number[]).map((off) => (
+        <circle key={off} cx={sx} cy={sy} r={1.5}>
+          {/* @ts-ignore */}
+          <animate attributeName="cy" values={`${sy};${sy - 8};${sy - 18}`}
+            dur="2s" begin={`${off}s`} repeatCount="indefinite" calcMode="linear" />
+          {/* @ts-ignore */}
+          <animate attributeName="cx" values={`${sx};${sx - 4};${sx - 8}`}
+            dur="2s" begin={`${off}s`} repeatCount="indefinite" calcMode="linear" />
+          {/* @ts-ignore */}
+          <animate attributeName="r" values="1.5;2.8;4.5"
+            dur="2s" begin={`${off}s`} repeatCount="indefinite" calcMode="linear" />
+          {/* @ts-ignore */}
+          <animate attributeName="opacity" values="0.55;0.28;0"
+            dur="2s" begin={`${off}s`} repeatCount="indefinite" calcMode="linear" />
+        </circle>
+      ))}
+    </g>
+  );
+}
+
+// Top-down commercial airliner (faces +x / rightward by default)
+function Airliner() {
+  const c = "#B0512E";
+  return (
+    <g>
+      <ellipse cx="0" cy="0" rx="16" ry="2.5" fill={c} />
+      <path d="M 14 -1.5 L 21 0 L 14 1.5 Z" fill={c} />
+      {/* swept-back main wings */}
+      <path d="M 4 -2 L -6 -22 L -10 -20 L -1 -2 Z" fill={c} />
+      <path d="M 4  2 L -6  22 L -10  20 L -1  2 Z" fill={c} />
+      {/* engine nacelles */}
+      <ellipse cx="-2" cy="-14" rx="4.5" ry="1.8" fill={c} />
+      <ellipse cx="-2" cy=" 14" rx="4.5" ry="1.8" fill={c} />
+      {/* horizontal stabilisers */}
+      <path d="M -13 -1.5 L -20 -10 L -22 -9 L -15 -1.5 Z" fill={c} />
+      <path d="M -13  1.5 L -20  10 L -22   9 L -15  1.5 Z" fill={c} />
+      {/* vertical fin */}
+      <path d="M -13 -1 L -20 -7 L -17 -1 Z" fill={c} />
+    </g>
+  );
+}
+
+// Locomotive + 2 carriages (faces +x / rightward by default).
+// mirrored=true uses scale(-1,1): faces left, keeps wheels on +y (screen bottom),
+// and automatically makes smoke drift backward (screen-rightward for leftward train).
+function TrainLoco({ mirrored }: { mirrored: boolean }) {
+  const rc = "#3A4D6B";
+  const dk = "#1e2d3d";
+  const wc = "#1b1a17";
+  return (
+    <g transform={mirrored ? "scale(-1,1)" : undefined}>
+      {/* Carriage 2 */}
+      <rect x="-56" y="-10" width="22" height="16" rx="1" fill={rc} />
+      <rect x="-54" y="-8" width="7" height="4" rx="0.5" fill={dk} opacity="0.7" />
+      <rect x="-44" y="-8" width="7" height="4" rx="0.5" fill={dk} opacity="0.7" />
+      <circle cx="-50" cy="10" r="3.5" fill={wc} stroke={rc} strokeWidth="1" />
+      <circle cx="-38" cy="10" r="3.5" fill={wc} stroke={rc} strokeWidth="1" />
+      <rect x="-34" y="-1.5" width="4" height="3" fill={dk} />
+      {/* Carriage 1 */}
+      <rect x="-30" y="-10" width="22" height="16" rx="1" fill={rc} />
+      <rect x="-28" y="-8" width="7" height="4" rx="0.5" fill={dk} opacity="0.7" />
+      <rect x="-18" y="-8" width="7" height="4" rx="0.5" fill={dk} opacity="0.7" />
+      <circle cx="-24" cy="10" r="3.5" fill={wc} stroke={rc} strokeWidth="1" />
+      <circle cx="-12" cy="10" r="3.5" fill={wc} stroke={rc} strokeWidth="1" />
+      <rect x="-8" y="-1.5" width="4" height="3" fill={dk} />
+      {/* Locomotive */}
+      <rect x="-4" y="-13" width="12" height="20" rx="1" fill={rc} />
+      <rect x="8" y="-10" width="20" height="17" rx="1" fill={rc} />
+      <rect x="22" y="-18" width="4" height="8" rx="0.5" fill={dk} />
+      <circle cx="2"  cy="10" r="3.8" fill={wc} stroke={rc} strokeWidth="1" />
+      <circle cx="14" cy="10" r="3.8" fill={wc} stroke={rc} strokeWidth="1" />
+      <circle cx="24" cy="10" r="4.5" fill={wc} stroke={rc} strokeWidth="1.2" />
+      <circle cx="26" cy="-2" r="2"   fill="#ead8b8" opacity="0.85" />
+      {/* Smoke from chimney — drifts in -x local direction (backward for both orientations) */}
+      <SmokePuffs sx={24} sy={-18} />
+    </g>
+  );
+}
+
+// Sedan car (side profile, faces +x / rightward)
+function SedanCar() {
+  const bc = "#6b5a32";
+  const dk = "#2a1f0e";
+  const wc = "#1b1a17";
+  return (
+    <g>
+      <rect x="-12" y="-4" width="24" height="10" rx="2" fill={bc} />
+      <path d="M -7 -4 L -5 -10 L 7 -10 L 9 -4 Z" fill={bc} />
+      <rect x="-4" y="-9" width="5" height="4" rx="0.5" fill={dk} opacity="0.6" />
+      <rect x="2"  y="-9" width="5" height="4" rx="0.5" fill={dk} opacity="0.6" />
+      <circle cx="-7" cy="7" r="3.5" fill={wc} />
+      <circle cx=" 7" cy="7" r="3.5" fill={wc} />
+      <circle cx="-7" cy="7" r="1.5" fill="#888" />
+      <circle cx=" 7" cy="7" r="1.5" fill="#888" />
+      <rect x="11"  y="-2" width="3" height="2" rx="0.5" fill="#ead8b8"  opacity="0.8" />
+      <rect x="-14" y="-2" width="3" height="2" rx="0.5" fill="#B0512E" opacity="0.8" />
+    </g>
+  );
+}
+
+// Synchronized vehicle + sedan pair.
+// Vehicle: keyPoints 0→1→1 (travels then holds) — sedan: 0→0→1 (waits then travels).
+// Both share dur & begin so sedan departs the instant the vehicle arrives.
+interface JourneyProps {
+  vPathId: string;
+  cPathId: string;
+  totalDur: number;
+  ratio: number;
+  begin: number;
+  rotateV?: boolean;
+  vehicle: React.ReactNode;
+}
+function Journey({ vPathId, cPathId, totalDur, ratio, begin, rotateV = true, vehicle }: JourneyProps) {
+  const dur = `${totalDur}s`;
+  const bs  = `${begin}s`;
+  const r   = ratio.toFixed(4);
+  return (
+    <g>
+      <g>
+        {/* @ts-ignore */}
+        <animateMotion dur={dur} begin={bs} repeatCount="indefinite"
+          rotate={rotateV ? "auto" : "0"}
+          keyPoints={`0;1;1`} keyTimes={`0;${r};1`} calcMode="linear">
+          {/* @ts-ignore */}
+          <mpath href={`#${vPathId}`} />
+        </animateMotion>
+        {vehicle}
+      </g>
+      <g>
+        {/* @ts-ignore */}
+        <animateMotion dur={dur} begin={bs} repeatCount="indefinite"
+          rotate="auto"
+          keyPoints={`0;0;1`} keyTimes={`0;${r};1`} calcMode="linear">
+          {/* @ts-ignore */}
+          <mpath href={`#${cPathId}`} />
+        </animateMotion>
+        <SedanCar />
+      </g>
+    </g>
+  );
+}
+
+// All four journeys: 2 planes → Pantnagar, 2 trains → Kathgodam; each triggers a sedan
+function AnimatedVehicles() {
+  return (
+    <g>
+      <defs>
+        {/* Plane approach paths (from west / Delhi direction) */}
+        <path id="av-p1v" d="M -80 665 Q 340 668 700 645" />
+        <path id="av-p2v" d="M -80 690 Q 290 692 700 645" />
+        {/* Car from Pantnagar → Kausani */}
+        <path id="av-pc" d="M 700 645 Q 678 540 648 435 Q 622 370 605 312" />
+        {/* Train 1: from west (heading right, rotate=auto safe) */}
+        <path id="av-t1v" d="M -60 632 Q 270 638 620 615" />
+        {/* Train 2: from east (heading left, use rotate=0 + mirrored shape) */}
+        <path id="av-t2v" d="M 1010 622 L 620 615" />
+        {/* Car from Kathgodam → Kausani */}
+        <path id="av-tc" d="M 620 615 Q 618 492 612 410 Q 607 362 605 312" />
+      </defs>
+
+      {/* Plane 1 + sedan (cycle 36s, plane leg 11s, begin 0s) */}
+      <Journey vPathId="av-p1v" cPathId="av-pc"
+        totalDur={36} ratio={11 / 36} begin={0}
+        vehicle={<Airliner />} />
+      {/* Plane 2 + sedan (offset 18s for continuous arrivals) */}
+      <Journey vPathId="av-p2v" cPathId="av-pc"
+        totalDur={36} ratio={11 / 36} begin={18}
+        vehicle={<Airliner />} />
+      {/* Train 1 from west (heading right, rotate=auto) + sedan */}
+      <Journey vPathId="av-t1v" cPathId="av-tc"
+        totalDur={30} ratio={8 / 30} begin={4}
+        vehicle={<TrainLoco mirrored={false} />} />
+      {/* Train 2 from east (heading left, rotate=0 + mirrored shape) + sedan */}
+      <Journey vPathId="av-t2v" cPathId="av-tc"
+        totalDur={30} ratio={8 / 30} begin={22}
+        rotateV={false} vehicle={<TrainLoco mirrored={true} />} />
+    </g>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function curvedPath(x1: number, y1: number, x2: number, y2: number, curvature = 0.18) {
   // Mid-point with perpendicular offset for a gentle hand-drawn arc
@@ -247,7 +435,7 @@ export default function BhetaMap({ active, onSelect, modeFilter }: Props) {
           <use href="#compass" />
         </g>
 
-        {/* ── Animated vehicles ── */}
+        {/* Animated vehicles — planes → Pantnagar, trains → Kathgodam, sedans → Kausani */}
         <AnimatedVehicles />
 
         {/* Scale bar (calibrated against PX_PER_KM) */}
@@ -298,88 +486,4 @@ export default function BhetaMap({ active, onSelect, modeFilter }: Props) {
 export { DESTINATIONS as MAP_DESTINATIONS };
 export type { Destination };
 
-// ─── Animated vehicles ────────────────────────────────────────────────────────
-// Uses SVG SMIL animateMotion — no JS loop, runs in the browser's compositor.
 
-interface VP { path: string; dur: number; begin: number }
-
-function PlaneVehicle({ path, dur, begin }: VP) {
-  const d = `${dur}s`, b = `${begin}s`;
-  return (
-    <g>
-      {/* @ts-ignore — SMIL attrs not in React's SVG types */}
-      <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.88;1"
-        dur={d} begin={b} repeatCount="indefinite" />
-      {/* @ts-ignore */}
-      <animateMotion dur={d} begin={b} repeatCount="indefinite" rotate="auto" path={path}
-        calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.35 0 0.65 1" />
-      {/* Delta-wing silhouette pointing → */}
-      <path d="M 11 0 L -5 -8 L -2 0 L -5 8 Z" fill="#B0512E" />
-      {/* Contrail */}
-      <circle cx="-9"  cy="0" r="1.2" fill="#B0512E" opacity="0.35" />
-      <circle cx="-13" cy="0" r="0.7" fill="#B0512E" opacity="0.18" />
-    </g>
-  );
-}
-
-function TrainVehicle({ path, dur, begin }: VP) {
-  const d = `${dur}s`, b = `${begin}s`;
-  return (
-    <g>
-      {/* @ts-ignore */}
-      <animate attributeName="opacity" values="0;0.85;0.85;0" keyTimes="0;0.06;0.88;1"
-        dur={d} begin={b} repeatCount="indefinite" />
-      {/* @ts-ignore */}
-      <animateMotion dur={d} begin={b} repeatCount="indefinite" rotate="auto" path={path}
-        calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.3 0.1 0.3 1" />
-      {/* Locomotive pointing → */}
-      <rect x="-10" y="-4"  width="20" height="8" rx="1.5" fill="#3A4D6B" />
-      <rect x="2"   y="-7"  width="7"  height="4" rx="1"   fill="#3A4D6B" />
-      <circle cx="-7" cy="5" r="2" fill="#1b1a17" />
-      <circle cx="4"  cy="5" r="2" fill="#1b1a17" />
-      {/* Steam puff ahead */}
-      <circle cx="13" cy="-7" r="2.2" fill="#3A4D6B" opacity="0.22" />
-      <circle cx="16" cy="-8" r="1.5" fill="#3A4D6B" opacity="0.12" />
-    </g>
-  );
-}
-
-function CarVehicle({ path, dur, begin }: VP) {
-  const d = `${dur}s`, b = `${begin}s`;
-  return (
-    <g>
-      {/* @ts-ignore */}
-      <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.88;1"
-        dur={d} begin={b} repeatCount="indefinite" />
-      {/* @ts-ignore */}
-      <animateMotion dur={d} begin={b} repeatCount="indefinite" rotate="auto" path={path}
-        calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.4 0 0.6 1" />
-      {/* Compact car pointing → */}
-      <rect x="-8" y="-3.5" width="16" height="7"   rx="2"   fill="#2F4A3A" />
-      <rect x="-4" y="-7"   width="8"  height="4.5" rx="1.5" fill="#2F4A3A" />
-      <circle cx="-5" cy="4.5" r="2" fill="#1b1a17" />
-      <circle cx="4"  cy="4.5" r="2" fill="#1b1a17" />
-      {/* Headlights */}
-      <circle cx="9" cy="-2" r="1.2" fill="#fbf3df" opacity="0.9" />
-      <circle cx="9" cy="2"  r="1.2" fill="#fbf3df" opacity="0.9" />
-    </g>
-  );
-}
-
-function AnimatedVehicles() {
-  return (
-    <g>
-      {/* 2 planes from different directions → Pantnagar (700, 645) */}
-      <PlaneVehicle path="M 55 -35 Q 360 210 700 645"  dur={13} begin={0} />
-      <PlaneVehicle path="M 1040 55 Q 870 330 700 645" dur={13} begin={7} />
-
-      {/* 2 trains from south → Kathgodam (620, 615) */}
-      <TrainVehicle path="M 100 730 Q 340 705 620 615" dur={18} begin={3}  />
-      <TrainVehicle path="M 760 730 Q 685 695 620 615" dur={18} begin={13} />
-
-      {/* 2 cars from arrival hubs → Kausani (605, 312) */}
-      <CarVehicle path="M 700 645 Q 699 465 605 312" dur={23} begin={6}  />
-      <CarVehicle path="M 620 615 Q 655 460 605 312" dur={23} begin={17} />
-    </g>
-  );
-}
