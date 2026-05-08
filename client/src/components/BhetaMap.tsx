@@ -247,6 +247,9 @@ export default function BhetaMap({ active, onSelect, modeFilter }: Props) {
           <use href="#compass" />
         </g>
 
+        {/* ── Animated vehicles ── */}
+        <AnimatedVehicles />
+
         {/* Scale bar (calibrated against PX_PER_KM) */}
         <g transform="translate(60, 640)">
           <text fontFamily="JetBrains Mono" fontSize="10" fill="#1b1a17" y="-6">
@@ -294,3 +297,89 @@ export default function BhetaMap({ active, onSelect, modeFilter }: Props) {
 
 export { DESTINATIONS as MAP_DESTINATIONS };
 export type { Destination };
+
+// ─── Animated vehicles ────────────────────────────────────────────────────────
+// Uses SVG SMIL animateMotion — no JS loop, runs in the browser's compositor.
+
+interface VP { path: string; dur: number; begin: number }
+
+function PlaneVehicle({ path, dur, begin }: VP) {
+  const d = `${dur}s`, b = `${begin}s`;
+  return (
+    <g>
+      {/* @ts-ignore — SMIL attrs not in React's SVG types */}
+      <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.88;1"
+        dur={d} begin={b} repeatCount="indefinite" />
+      {/* @ts-ignore */}
+      <animateMotion dur={d} begin={b} repeatCount="indefinite" rotate="auto" path={path}
+        calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.35 0 0.65 1" />
+      {/* Delta-wing silhouette pointing → */}
+      <path d="M 11 0 L -5 -8 L -2 0 L -5 8 Z" fill="#B0512E" />
+      {/* Contrail */}
+      <circle cx="-9"  cy="0" r="1.2" fill="#B0512E" opacity="0.35" />
+      <circle cx="-13" cy="0" r="0.7" fill="#B0512E" opacity="0.18" />
+    </g>
+  );
+}
+
+function TrainVehicle({ path, dur, begin }: VP) {
+  const d = `${dur}s`, b = `${begin}s`;
+  return (
+    <g>
+      {/* @ts-ignore */}
+      <animate attributeName="opacity" values="0;0.85;0.85;0" keyTimes="0;0.06;0.88;1"
+        dur={d} begin={b} repeatCount="indefinite" />
+      {/* @ts-ignore */}
+      <animateMotion dur={d} begin={b} repeatCount="indefinite" rotate="auto" path={path}
+        calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.3 0.1 0.3 1" />
+      {/* Locomotive pointing → */}
+      <rect x="-10" y="-4"  width="20" height="8" rx="1.5" fill="#3A4D6B" />
+      <rect x="2"   y="-7"  width="7"  height="4" rx="1"   fill="#3A4D6B" />
+      <circle cx="-7" cy="5" r="2" fill="#1b1a17" />
+      <circle cx="4"  cy="5" r="2" fill="#1b1a17" />
+      {/* Steam puff ahead */}
+      <circle cx="13" cy="-7" r="2.2" fill="#3A4D6B" opacity="0.22" />
+      <circle cx="16" cy="-8" r="1.5" fill="#3A4D6B" opacity="0.12" />
+    </g>
+  );
+}
+
+function CarVehicle({ path, dur, begin }: VP) {
+  const d = `${dur}s`, b = `${begin}s`;
+  return (
+    <g>
+      {/* @ts-ignore */}
+      <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.88;1"
+        dur={d} begin={b} repeatCount="indefinite" />
+      {/* @ts-ignore */}
+      <animateMotion dur={d} begin={b} repeatCount="indefinite" rotate="auto" path={path}
+        calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.4 0 0.6 1" />
+      {/* Compact car pointing → */}
+      <rect x="-8" y="-3.5" width="16" height="7"   rx="2"   fill="#2F4A3A" />
+      <rect x="-4" y="-7"   width="8"  height="4.5" rx="1.5" fill="#2F4A3A" />
+      <circle cx="-5" cy="4.5" r="2" fill="#1b1a17" />
+      <circle cx="4"  cy="4.5" r="2" fill="#1b1a17" />
+      {/* Headlights */}
+      <circle cx="9" cy="-2" r="1.2" fill="#fbf3df" opacity="0.9" />
+      <circle cx="9" cy="2"  r="1.2" fill="#fbf3df" opacity="0.9" />
+    </g>
+  );
+}
+
+function AnimatedVehicles() {
+  return (
+    <g>
+      {/* 2 planes from different directions → Pantnagar (700, 645) */}
+      <PlaneVehicle path="M 55 -35 Q 360 210 700 645"  dur={13} begin={0} />
+      <PlaneVehicle path="M 1040 55 Q 870 330 700 645" dur={13} begin={7} />
+
+      {/* 2 trains from south → Kathgodam (620, 615) */}
+      <TrainVehicle path="M 100 730 Q 340 705 620 615" dur={18} begin={3}  />
+      <TrainVehicle path="M 760 730 Q 685 695 620 615" dur={18} begin={13} />
+
+      {/* 2 cars from arrival hubs → Kausani (605, 312) */}
+      <CarVehicle path="M 700 645 Q 699 465 605 312" dur={23} begin={6}  />
+      <CarVehicle path="M 620 615 Q 655 460 605 312" dur={23} begin={17} />
+    </g>
+  );
+}
