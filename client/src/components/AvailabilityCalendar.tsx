@@ -4,7 +4,7 @@
 import { useMemo } from "react";
 import { DayPicker, type DateRange } from "react-day-picker";
 import "react-day-picker/style.css";
-import { buildBlockedDateSet, type BlockedRange } from "@/lib/qord";
+import { buildBlockedDateSet, toLocalYMD, type BlockedRange } from "@/lib/qord";
 
 interface Props {
   blockedRanges: BlockedRange[];
@@ -20,7 +20,8 @@ export default function AvailabilityCalendar({ blockedRanges, selected, onSelect
   today.setHours(0, 0, 0, 0);
 
   function isBlocked(date: Date) {
-    const ymd = date.toISOString().slice(0, 10);
+    // Use local date string — toISOString() would give UTC date (off by 1 for IST users)
+    const ymd = toLocalYMD(date);
     return date < today || blockedSet.has(ymd);
   }
 

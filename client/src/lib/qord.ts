@@ -71,8 +71,17 @@ export function buildBlockedDateSet(ranges: BlockedRange[]): Set<string> {
   return blocked;
 }
 
+/** UTC-safe: for timestamps from the API (already UTC-correct IST times) */
 export function toYMD(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** Local-timezone-safe: for Date objects from the browser (react-day-picker, etc.) */
+export function toLocalYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function nightsBetween(from: Date, to: Date): number {

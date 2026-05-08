@@ -6,7 +6,7 @@ import type { DateRange } from "react-day-picker";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, ExternalLink, CalendarDays, User, CreditCard, CheckCircle, Loader2 } from "lucide-react";
 import AvailabilityCalendar from "@/components/AvailabilityCalendar";
-import { createBooking, nightsBetween, toYMD, type PropertyInfo, type BookingResult } from "@/lib/qord";
+import { createBooking, nightsBetween, toLocalYMD, type PropertyInfo, type BookingResult } from "@/lib/qord";
 
 type Step = "dates" | "info" | "confirm" | "done";
 
@@ -48,8 +48,8 @@ export default function BookingFlow({ property, token, onClose }: Props) {
     try {
       const res = await createBooking({
         property_token: token,
-        check_in: toYMD(range.from),
-        check_out: toYMD(range.to),
+        check_in: toLocalYMD(range.from),
+        check_out: toLocalYMD(range.to),
         guest_name: guest.name.trim(),
         guest_phone: guest.phone.trim() || undefined,
         guest_email: guest.email.trim() || undefined,

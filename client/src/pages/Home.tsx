@@ -13,8 +13,6 @@ import { Car, TrainFront, Plane, MapPin, Compass, Phone, Mail } from "lucide-rea
 const SEAL_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663529091986/Scs4Vu8VvmjxVNgSRkX7yS/bheta-seal-Ckt69jQrVyv3TCjVLmcBoP.webp";
 
-const AUTO_CYCLE_DESTINATIONS = ["pantnagar", "kathgodam", "corbett"];
-
 const MODE_META: Record<Mode, { label: string; Icon: typeof Car; color: string }> = {
   road: { label: "By road", Icon: Car, color: "var(--color-deodar)" },
   rail: { label: "By rail", Icon: TrainFront, color: "var(--color-indigo-faded)" },
@@ -30,9 +28,7 @@ function formatGoogleMapsUrl(d: Destination) {
 export default function Home() {
   const [active, setActive] = useState<string | null>("kausani");
   const [filter, setFilter] = useState<Mode | "all">("all");
-  const [autoPlay, setAutoPlay] = useState(true);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const cycleIndexRef = useRef(0);
 
   const visible = useMemo(
     () => DESTINATIONS.filter((d) => filter === "all" || d.mode === filter),
@@ -44,30 +40,8 @@ export default function Home() {
     [active]
   );
 
-  // Auto-cycle through specific destinations once to showcase interactivity
-  useEffect(() => {
-    if (!autoPlay) return;
-
-    let currentCycleIndex = 0;
-
-    const interval = setInterval(() => {
-      if (currentCycleIndex < AUTO_CYCLE_DESTINATIONS.length) {
-        setActive(AUTO_CYCLE_DESTINATIONS[currentCycleIndex]);
-        currentCycleIndex++;
-      } else {
-        // Cycle complete, stop auto-play
-        setAutoPlay(false);
-        clearInterval(interval);
-      }
-    }, 2500); // Change every 2.5 seconds
-
-    return () => clearInterval(interval);
-  }, [autoPlay]);
-
-  // When user manually selects a destination, stop auto-play
   const handleDestinationSelect = (id: string) => {
     setActive(id);
-    setAutoPlay(false);
   };
 
   // When user picks via map, scroll the corresponding card into view.
@@ -178,7 +152,7 @@ export default function Home() {
               </div>
             </div>
             <p className="font-mono text-[10px] text-[color:var(--color-ink-soft)]/70 mb-3 italic">
-              Watch the map cycle through key hubs, or tap any destination to explore.
+              Tap any destination to draw the route and see travel details.
             </p>
 
             <div className="paper-card rounded-md p-2 max-h-[640px] overflow-y-auto pr-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[color:var(--color-rule)] [&::-webkit-scrollbar-thumb]:rounded">
